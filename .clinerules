@@ -1,0 +1,47 @@
+# Ollama Model Manager Design Specification
+
+## Overall
+
+This is a web based ollama model management tool that enables users to easily view, copy, and delete models.
+It provides a user-friendly interface for managing models, including their parameters and templates. The tool is designed to be responsive and efficient, leveraging modern web technologies.
+
+The tool has following features:
+
+- User friendly interface for managing models
+- View model details including parameters and templates
+- Delete models with confirmation
+- Copy models with optional parameter/template overrides
+
+## Architecture
+
+### Backend
+
+The backend is based upon FastAPI and ollama SDK.
+
+Framework: FastAPI (Async)
+Endpoints:
+- GET /api/models → List all available models (name, size, modified date)
+- GET /api/models/{name} → Get full model details (parameters, template, etc.)
+- DELETE /api/models/{name} → Delete model with confirmation
+- POST /api/models/copy → Copy model with optional parameter/template overrides
+
+### Frontend
+Framework: Vue 3 + PrimeVue
+Core Components:
+- ModelsTable (PrimeTable): Displays model list with sort/filter
+- ModelDetailCard: Shows detailed model information
+- CopyModelDialog: Modal for customizing copied models
+- DeleteConfirmDialog: Confirmation for destructive actions
+
+UI Requirements:
+- PrimeVue theme (material design)
+- Toast notifications for actions
+- Loading indicators for async operations
+- Responsive layout with PrimeFlex
+
+
+## Constrains
+
+- Always use `pip` to manage python dependencies. Never modify the requirments.txt file directly.
+- Always use `npm` to manage javascript dependencies. Never modify the package.json file directly.
+- Backend should have proper logging setup.
