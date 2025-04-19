@@ -35,8 +35,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import axios from 'axios'
+import { ref, onMounted, getCurrentInstance } from 'vue'
 import { useConfirm } from 'primevue/useconfirm'
 import { useToast } from 'primevue/usetoast'
 import CopyModelDialog from './CopyModelDialog.vue'
@@ -52,10 +51,12 @@ onMounted(async () => {
   await fetchModels()
 })
 
+const instance = getCurrentInstance()
+
 async function fetchModels() {
   try {
     loading.value = true
-    const response = await axios.get('/api/models')
+    const response = await instance.appContext.config.globalProperties.$api.get('/models')
     models.value = response.data
   } catch (error) {
     toast.add({
@@ -82,7 +83,7 @@ async function deleteModel(modelName) {
   try {
     // model name might contain '/', we need to encode it
     const encodedModelName = encodeURIComponent(modelName)
-    await axios.delete(`/api/models/${encodedModelName}`)
+    await instance.appContext.config.globalProperties.$api.delete(`/models/${encodedModelName}`)
     toast.add({
       severity: 'success',
       summary: 'Success',

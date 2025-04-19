@@ -52,3 +52,4 @@ ENV/
 .coverage
 htmlcov/
 .mypy_cache/
+/static/

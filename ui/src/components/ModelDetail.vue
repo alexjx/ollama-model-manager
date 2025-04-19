@@ -24,9 +24,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, getCurrentInstance } from 'vue'
 import { useRoute } from 'vue-router'
-import axios from 'axios'
 import { useToast } from 'primevue/usetoast'
 
 const route = useRoute()
@@ -35,7 +34,8 @@ const model = ref(null)
 
 onMounted(async () => {
     try {
-        const response = await axios.get(`/api/models/${route.params.name}`)
+        const instance = getCurrentInstance()
+        const response = await instance.appContext.config.globalProperties.$api.get(`/models/${route.params.name}`)
         model.value = response.data
     } catch (error) {
         toast.add({

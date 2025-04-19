@@ -4,7 +4,7 @@ WORKDIR /app
 COPY ui/package.json ui/package-lock.json ./
 RUN npm install
 COPY ui .
-RUN npm run build
+RUN VITE_BASE_PATH=/static VITE_API_BASE_URL=/api npm run build
 
 # Stage 2: Build backend
 FROM python:3.10-slim AS backend-builder
@@ -17,11 +17,12 @@ COPY src/ .
 FROM python:3.10-slim
 WORKDIR /app
 
-# Copy built frontend
-COPY --from=frontend-builder /app/dist ./ui/dist
+# Copy built frontend to static directory
+COPY --from=frontend-builder /app/dist ./static
 
-# Copy backend
+# Copy backend and Python packages
 COPY --from=backend-builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
+COPY --from=backend-builder /usr/local/bin/uvicorn /usr/local/bin/uvicorn
 COPY --from=backend-builder /app .
 
 # Environment variables
@@ -30,4 +31,4 @@ ENV PORT=8000
 EXPOSE $PORT
 
 # Run both frontend and backend
-CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port $PORT"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--root-path", "/api"]
