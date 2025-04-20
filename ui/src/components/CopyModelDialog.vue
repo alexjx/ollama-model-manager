@@ -64,12 +64,35 @@ function parseParameters() {
     return Object.keys(params).length > 0 ? params : undefined
 }
 
-function open(modelName) {
+async function open(modelName) {
     sourceName.value = modelName
     visible.value = true
     targetName.value = `${modelName}-copy`
     parameters.value = ''
     template.value = ''
+
+    try {
+        const response = await axios.get(`/api/models/${modelName}`)
+        const model = response.data
+
+        // Convert parameters array to key=value format
+        if (model.parameters) {
+            parameters.value = model.parameters
+                .map(param => `${param.key} = ${param.value}`)
+                .join('\n')
+        }
+
+        if (model.template) {
+            template.value = model.template
+        }
+    } catch (error) {
+        toast.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Failed to load model details: ' + error.message,
+            life: 3000
+        })
+    }
 }
 
 function handleCopy() {
