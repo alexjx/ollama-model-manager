@@ -10,7 +10,9 @@
             <div class="field">
                 <label for="parameters" class="block">Parameters</label>
                 <Textarea id="parameters" v-model="parameters" :autoResize="true" rows="5"
-                    placeholder="Enter one parameter per line in key=value format" :class="['w-full']" />
+                    placeholder="Enter one parameter per line in key=value format" class='w-full'
+                    :invalid="!isParametersValid && parameters" @update:modelValue="validateParameters" />
+                <small v-if="!isParametersValid && parameters" class="p-error">{{ parametersError }}</small>
             </div>
             <div class="field">
                 <label for="template" class="block">Template</label>
@@ -20,7 +22,8 @@
         </div>
         <template #footer>
             <Button label="Cancel" icon="pi pi-times" @click="visible = false" text />
-            <Button label="Copy" icon="pi pi-check" @click="handleCopy" autofocus />
+            <Button label="Copy" icon="pi pi-check" @click="handleCopy" autofocus
+                :disabled="!isParametersValid || !targetName" />
         </template>
     </Dialog>
 </template>
@@ -36,19 +39,19 @@ import InputText from 'primevue/inputtext'
 const emit = defineEmits(['copied'])
 
 function handleKeyDown(e) {
-  if (e.key === 'Enter' && visible.value) {
-    handleCopy()
-  } else if (e.key === 'Escape' && visible.value) {
-    visible.value = false
-  }
+    if (e.key === 'Enter' && e.shiftKey && visible.value) {
+        handleCopy()
+    } else if (e.key === 'Escape' && visible.value) {
+        visible.value = false
+    }
 }
 
 onMounted(() => {
-  window.addEventListener('keydown', handleKeyDown)
+    window.addEventListener('keydown', handleKeyDown)
 })
 
 onBeforeUnmount(() => {
-  window.removeEventListener('keydown', handleKeyDown)
+    window.removeEventListener('keydown', handleKeyDown)
 })
 
 const toast = useToast()
@@ -57,6 +60,21 @@ const sourceName = ref('')
 const targetName = ref('')
 const parameters = ref('')
 const template = ref('')
+const isParametersValid = ref(true)
+const parametersError = ref('')
+
+function validateParameters() {
+    try {
+        if (parameters.value.trim()) {
+            parseParameters()
+        }
+        isParametersValid.value = true
+        parametersError.value = ''
+    } catch (error) {
+        isParametersValid.value = false
+        parametersError.value = error.message
+    }
+}
 
 function parseParameters() {
     const params = {}
@@ -74,6 +92,11 @@ function parseParameters() {
 
         const key = trimmedLine.slice(0, firstEqual).trim()
         const value = trimmedLine.slice(firstEqual + 1).trim()
+
+        if (!key || !value) {
+            throw new Error(`Invalid parameter format in line ${trimmedLine}.`)
+        }
+
         params[key] = value
     }
 
@@ -86,6 +109,9 @@ async function open(modelName) {
     targetName.value = `${modelName}-copy`
     parameters.value = ''
     template.value = ''
+    isParametersValid.value = true
+    parametersError.value = ''
+    validateParameters()
 
     try {
         const response = await axios.get(`/api/models/${modelName}`)
