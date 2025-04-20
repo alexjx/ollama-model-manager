@@ -3,7 +3,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Tuple
 from ollama import AsyncClient
 
 # Setup logging
@@ -36,7 +36,7 @@ class ModelInfo(BaseModel):
 
 
 class ModelDetail(ModelInfo):
-    parameters: List[str]
+    parameters: List[dict[str, str]]
     template: str
 
 
@@ -77,13 +77,28 @@ async def get_model(name: str):
             modified_at = modified_at.isoformat()
 
         parameters = model_info.get("parameters", "")
-        parameters = parameters.split("\n")
+        parameters_dict = {}
+        if parameters:
+            # parse paraemters into a dictionary
+            # format is below, one key-value pair per line, and separated by whitespace
+            # it is in align text format:
+            # key1     "value1"
+            # key2     "value2"
+            # key3     int_value
+            for line in parameters.splitlines():
+                if line.strip() == "":
+                    continue
+                key, value = line.split(maxsplit=1)
+                # remove quotes from value
+                if value.startswith('"') and value.endswith('"'):
+                    value = value[1:-1]
+                parameters_dict[key] = value
 
         return ModelDetail(
             name=name,
             size=model_info.get("size", 0),
             modified_at=modified_at,
-            parameters=parameters,
+            parameters=[{"key": k, "value": v} for k, v in parameters_dict.items()],
             template=model_info.get("template", ""),
         )
     except HTTPException as http_exc:

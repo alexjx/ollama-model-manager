@@ -5,9 +5,10 @@
             <Card class="my-4">
                 <template #title>Parameters</template>
                 <template #content>
-                    <div v-for="(param, index) in model.parameters" :key="index">
-                        <div>{{ param }}</div>
-                    </div>
+                    <DataTable :value="model.parameters" size="small" tableStyle="min-width: 50rem">
+                        <Column field="key" header="Key" />
+                        <Column field="value" header="Value" />
+                    </DataTable>
                 </template>
             </Card>
             <Card class="my-4">
@@ -24,9 +25,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, getCurrentInstance } from 'vue'
+import { ref, onMounted, getCurrentInstance } from 'vue'
 import { useRoute } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
+import DataTable from 'primevue/datatable'
+import Column from 'primevue/column'
 
 const route = useRoute()
 const toast = useToast()
