@@ -26,7 +26,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import axios from 'axios'
 import { useToast } from 'primevue/usetoast'
 import Dialog from 'primevue/dialog'
@@ -34,6 +34,22 @@ import Textarea from 'primevue/textarea'
 import InputText from 'primevue/inputtext'
 
 const emit = defineEmits(['copied'])
+
+function handleKeyDown(e) {
+  if (e.key === 'Enter' && visible.value) {
+    handleCopy()
+  } else if (e.key === 'Escape' && visible.value) {
+    visible.value = false
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeyDown)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleKeyDown)
+})
 
 const toast = useToast()
 const visible = ref(false)
