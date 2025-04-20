@@ -1,7 +1,6 @@
 import logging
-from fastapi import FastAPI, HTTPException, APIRouter
+from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, List
@@ -48,11 +47,8 @@ class CopyModelRequest(BaseModel):
     template: Optional[str] = None
 
 
-api_router = APIRouter(prefix="/api", tags=["api"])
-
-
 # API Endpoints
-@api_router.get("/models", response_model=List[ModelInfo])
+@app.get("/api/models", response_model=List[ModelInfo])
 async def list_models():
     try:
         response = await client.list()
@@ -69,7 +65,7 @@ async def list_models():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@api_router.get("/models/{name}", response_model=ModelDetail)
+@app.get("/api/models/{name}", response_model=ModelDetail)
 async def get_model(name: str):
     try:
         model_info = await client.show(name)
@@ -97,7 +93,7 @@ async def get_model(name: str):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-@api_router.delete("/models/{name:path}")
+@app.delete("/api/models/{name:path}")
 async def delete_model(name: str):
     try:
         logger.info(f"Deleting model: {name}")
@@ -108,9 +104,12 @@ async def delete_model(name: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@api_router.post("/models/copy")
+@app.post("/api/models/copy")
 async def copy_model(request: CopyModelRequest):
     try:
+        logger.info(
+            f"Creating model '{request.model}' from base '{request.base}' with parameters: {request.parameters} and template: {request.template}"
+        )
         # Create new model using direct parameters
         await client.create(
             model=request.model,
@@ -129,22 +128,13 @@ async def copy_model(request: CopyModelRequest):
 
 
 # Health check endpoint
-@api_router.get("/health")
+@app.get("/api/health")
 async def health_check():
     return {"status": "healthy"}
 
 
-# Include the API router
-app.include_router(api_router)
-
 # Serve static files - must come after API routes
-app.mount("/static", StaticFiles(directory="static", html=True), name="static")
-
-
-@app.get("/")
-async def root():
-    return FileResponse("static/index.html")
-
+app.mount("/", StaticFiles(directory="static", html=True), name="static")
 
 if __name__ == "__main__":
     import uvicorn

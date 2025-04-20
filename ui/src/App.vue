@@ -22,6 +22,6 @@ function goHome() {
         </transition>
       </router-view>
     </main>
-    <Toast position="bottom-right" />
+    <Toast />
   </div>
 </template>

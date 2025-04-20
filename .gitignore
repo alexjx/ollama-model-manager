@@ -52,4 +52,9 @@ ENV/
 .coverage
 htmlcov/
 .mypy_cache/
+
+/src/static/
 /static/
+
+# common
+/tmp/

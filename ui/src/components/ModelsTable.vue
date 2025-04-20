@@ -29,7 +29,6 @@
     </DataTable>
 
     <ConfirmPopup />
-    <Toast />
     <CopyModelDialog ref="copyDialog" @copied="fetchModels" />
   </div>
 </template>
@@ -110,6 +109,6 @@ function showCopyDialog(modelName) {
 
 <style>
 .my-cell-padding {
-  padding: 0.25rem !important;
+  padding: 0.2rem !important;
 }
 </style>

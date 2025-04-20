@@ -4,7 +4,7 @@ WORKDIR /app
 COPY ui/package.json ui/package-lock.json ./
 RUN npm install
 COPY ui .
-RUN VITE_BASE_PATH=/static VITE_API_BASE_URL=/api npm run build
+RUN VITE_API_BASE_URL=/api npm run build
 
 # Stage 2: Build backend
 FROM python:3.10-slim AS backend-builder
