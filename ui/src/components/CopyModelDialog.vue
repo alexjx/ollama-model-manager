@@ -97,7 +97,16 @@ function parseParameters() {
             throw new Error(`Invalid parameter format in line ${trimmedLine}.`)
         }
 
-        params[key] = value
+        // keys are allow to be duplicated, for duplicated keys, we will make the value an array and append the value
+        if (params[key]) {
+            if (Array.isArray(params[key])) {
+                params[key].push(value)
+            } else {
+                params[key] = [params[key], value]
+            }
+        } else {
+            params[key] = value
+        }
     }
 
     return Object.keys(params).length > 0 ? params : undefined
@@ -114,7 +123,8 @@ async function open(modelName) {
     validateParameters()
 
     try {
-        const response = await axios.get(`/api/models/${modelName}`)
+        const encodedModelName = encodeURIComponent(modelName)
+        const response = await axios.get(`/api/models/${encodedModelName}`)
         const model = response.data
 
         // Convert parameters array to key=value format

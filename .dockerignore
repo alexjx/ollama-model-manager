@@ -25,3 +25,5 @@ yarn-error.log*
 *.test
 *.spec
 *.coverage
+
+/src/static

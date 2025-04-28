@@ -3,9 +3,12 @@
     <DataTable :value="models" :loading="loading" :pt="{ 'column': { 'bodyCell': { class: 'my-cell-padding' } } }">
       <Column field="name" header="Name" sortable>
         <template #body="{ data }">
-          <router-link :to="`/models/${data.name}`" class="text-primary">
+
+          <!-- Use encodeURIComponent to handle special characters in model names -->
+          <router-link :to="`/models/${encodeURIComponent(data.name)}`" class="text-primary">
             {{ data.name }}
           </router-link>
+
         </template>
       </Column>
       <Column field="size" header="Size (GB)" sortable>
@@ -109,6 +112,6 @@ function showCopyDialog(modelName) {
 
 <style>
 .my-cell-padding {
-  padding: 0.2rem !important;
+  padding: 0.1rem !important;
 }
 </style>

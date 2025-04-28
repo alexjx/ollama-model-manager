@@ -53,7 +53,9 @@ const model = ref(null)
 onMounted(async () => {
     try {
         const instance = getCurrentInstance()
-        const response = await instance.appContext.config.globalProperties.$api.get(`/models/${route.params.name}`)
+        const modelName = decodeURIComponent(route.params.name)
+        const encodedModelName = encodeURIComponent(modelName)
+        const response = await instance.appContext.config.globalProperties.$api.get(`/models/${encodedModelName}`)
         model.value = response.data
     } catch (error) {
         toast.add({

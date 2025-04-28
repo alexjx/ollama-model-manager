@@ -1,10 +1,13 @@
 import logging
-from fastapi import FastAPI, HTTPException
-from fastapi.staticfiles import StaticFiles
+from typing import List
+from typing import Optional
+
+from fastapi import FastAPI
+from fastapi import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import Optional, List
+from fastapi.staticfiles import StaticFiles
 from ollama import AsyncClient
+from pydantic import BaseModel
 
 # Setup logging
 logging.basicConfig(
@@ -65,7 +68,7 @@ async def list_models():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/api/models/{name}", response_model=ModelDetail)
+@app.get("/api/models/{name:path}", response_model=ModelDetail)
 async def get_model(name: str):
     try:
         model_info = await client.show(name)
@@ -77,13 +80,15 @@ async def get_model(name: str):
             modified_at = modified_at.isoformat()
 
         parameters = model_info.get("parameters", "")
-        parameters_dict = {}
+        parameters_list = []
         if parameters:
             # parse paraemters into a dictionary
             # format is below, one key-value pair per line, and separated by whitespace
             # it is in align text format:
             # key1     "value1"
+            # key2     "value1"
             # key2     "value2"
+            # key2     "value3"
             # key3     int_value
             for line in parameters.splitlines():
                 if line.strip() == "":
@@ -92,13 +97,13 @@ async def get_model(name: str):
                 # remove quotes from value
                 if value.startswith('"') and value.endswith('"'):
                     value = value[1:-1]
-                parameters_dict[key] = value
+                parameters_list.append({"key": key, "value": value})
 
         return ModelDetail(
             name=name,
             size=model_info.get("size", 0),
             modified_at=modified_at,
-            parameters=[{"key": k, "value": v} for k, v in parameters_dict.items()],
+            parameters=parameters_list,
             template=model_info.get("template", ""),
         )
     except HTTPException as http_exc:

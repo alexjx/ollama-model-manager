@@ -1,5 +1,5 @@
 # Stage 1: Build frontend
-FROM node:18 AS frontend-builder
+FROM node:22 AS frontend-builder
 WORKDIR /app
 COPY ui/package.json ui/package-lock.json ./
 RUN npm install
@@ -17,12 +17,12 @@ COPY src/ .
 FROM python:3.10-slim
 WORKDIR /app
 
-# Copy built frontend to static directory
-COPY --from=frontend-builder /app/dist ./static
-
 # Copy backend and Python packages
 COPY --from=backend-builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
 COPY --from=backend-builder /usr/local/bin/uvicorn /usr/local/bin/uvicorn
+
+# Copy built frontend to static directory
+COPY --from=frontend-builder /app/dist ./static
 COPY --from=backend-builder /app .
 
 # Environment variables
