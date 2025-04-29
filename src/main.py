@@ -1,6 +1,11 @@
 import logging
+from typing import Any
+from typing import Dict
 from typing import List
+from typing import List as ListType
 from typing import Optional
+from typing import Type
+from typing import Union
 
 from fastapi import FastAPI
 from fastapi import HTTPException
@@ -29,6 +34,68 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# Parameter type definitions
+class ParameterType:
+    def __init__(self, type_: Union[Type, ListType[Type]], allow_list: bool = False):
+        self.type = type_
+        self.allow_list = allow_list
+
+    def cast(self, value: Any) -> Any:
+        if self.allow_list and isinstance(value, list):
+            return [self.type(item) for item in value]
+        return self.type(value)
+
+    @property
+    def type_name(self) -> str:
+        base_type = self.type.__name__
+        return f"{base_type} or List[{base_type}]" if self.allow_list else base_type
+
+
+# Parameter type mapping
+PARAMETER_TYPES = {
+    "mirostat": ParameterType(int),
+    "mirostat_eta": ParameterType(float),
+    "mirostat_tau": ParameterType(float),
+    "num_ctx": ParameterType(int),
+    "repeat_last_n": ParameterType(int),
+    "repeat_penalty": ParameterType(float),
+    "temperature": ParameterType(float),
+    "seed": ParameterType(int),
+    "stop": ParameterType(
+        str, allow_list=True
+    ),  # Supports both string and list of strings
+    "num_predict": ParameterType(int),
+    "top_k": ParameterType(int),
+    "top_p": ParameterType(float),
+    "min_p": ParameterType(float),
+}
+
+
+def validate_and_cast_parameters(parameters: Dict[str, Any]) -> Dict[str, Any]:
+    """Validate and cast parameters to their proper types."""
+    if not parameters:
+        return parameters
+
+    result = {}
+    for key, value in parameters.items():
+        if key not in PARAMETER_TYPES:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid parameter: {key}. Parameter must be one of: {', '.join(PARAMETER_TYPES.keys())}",
+            )
+
+        try:
+            # Cast the value using the parameter type handler
+            result[key] = PARAMETER_TYPES[key].cast(value)
+        except (ValueError, TypeError) as e:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid value for {key}: {value}. Expected type: {PARAMETER_TYPES[key].type_name}",
+            )
+
+    return result
 
 
 # Models
@@ -127,14 +194,16 @@ async def delete_model(name: str):
 @app.post("/api/models/copy")
 async def copy_model(request: CopyModelRequest):
     try:
+        # Validate and cast parameters
+        validated_parameters = validate_and_cast_parameters(request.parameters)
+
         logger.info(
-            f"Creating model '{request.model}' from base '{request.base}' with parameters: {request.parameters} and template: {request.template}"
+            f"Creating model '{request.model}' from base '{request.base}' with parameters: {validated_parameters} and template: {request.template}"
         )
-        # Create new model using direct parameters
         await client.create(
             model=request.model,
             from_=request.base,  # Using from_ to match our model field
-            parameters=request.parameters,
+            parameters=validated_parameters,
             template=request.template,
         )
         logger.info(f"Model {request.model} created successfully")
